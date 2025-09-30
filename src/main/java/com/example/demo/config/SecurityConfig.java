@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +18,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception{
         
-        http.authorizeHttpRequests(auth -> auth.requestMatchers("/test/**").authenticated()
+        http.authorizeHttpRequests(auth -> auth.requestMatchers("/user/**").authenticated()
+                                        .requestMatchers("/users/**").hasRole("USER")
+                                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                                        .requestMatchers("/public/**").permitAll()
                    
                     ).formLogin(Customizer.withDefaults());
     
@@ -26,17 +29,28 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder){
+   @Bean
+public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
 
-        UserDetails user = User.withUsername("bibek")
-                                .password(passwordEncoder.encode("password"))
-                                .roles("USER")
-                                .build();
+    UserDetails user = User.withUsername("bibek")
+            .password(passwordEncoder.encode("password"))
+            .roles("USER")
+            .build();
 
-        return new InMemoryUserDetailsManager(user);
+    UserDetails admin = User.withUsername("admin")
+            .password(passwordEncoder.encode("admin123"))
+            .roles("ADMIN")
+            .build();
 
-    }
+    UserDetails manager = User.withUsername("manager")
+            .password(passwordEncoder.encode("manager123"))
+            .roles("MANAGER")
+            .build();
+
+    // InMemoryUserDetailsManager can take multiple users
+    return new InMemoryUserDetailsManager(user, admin, manager);
+}
+
 
     @Bean
     public PasswordEncoder bEncoder(){

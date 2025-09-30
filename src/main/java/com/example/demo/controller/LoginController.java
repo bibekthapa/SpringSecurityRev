@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/test")
+@RequestMapping("/user/")
 public class LoginController {
     
-    @GetMapping("/login")
+    @GetMapping("login")
     public String getMethodName() {
         return "In the login endpoint";
     }
