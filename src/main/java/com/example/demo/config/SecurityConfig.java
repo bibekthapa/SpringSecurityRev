@@ -4,13 +4,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.example.demo.repository.UserRepository;
 
 @Configuration
 public class SecurityConfig {
@@ -18,39 +22,46 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception{
         
-        http.authorizeHttpRequests(auth -> auth.requestMatchers("/user/**").authenticated()
+        http.csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth.requestMatchers("/user/**").authenticated()
                                         .requestMatchers("/users/**").hasRole("USER")
                                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                                        .requestMatchers("/public/**").permitAll()
+                                        .requestMatchers("/public/**").hasAnyRole("ADMIN","USER")
                    
-                    ).formLogin(Customizer.withDefaults());
+                    ).formLogin(Customizer.withDefaults())
+                    .httpBasic(Customizer.withDefaults());
     
 
         return http.build();
     }
 
-   @Bean
-public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+//    @Bean
+// public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
 
-    UserDetails user = User.withUsername("bibek")
-            .password(passwordEncoder.encode("password"))
-            .roles("USER")
-            .build();
+//     UserDetails user = User.withUsername("bibek")
+//             .password(passwordEncoder.encode("password"))
+//             .roles("USER")
+//             .build();
 
-    UserDetails admin = User.withUsername("admin")
-            .password(passwordEncoder.encode("admin123"))
-            .roles("ADMIN")
-            .build();
+//     UserDetails admin = User.withUsername("admin")
+//             .password(passwordEncoder.encode("admin123"))
+//             .roles("ADMIN")
+//             .build();
 
-    UserDetails manager = User.withUsername("manager")
-            .password(passwordEncoder.encode("manager123"))
-            .roles("MANAGER")
-            .build();
+//     UserDetails manager = User.withUsername("manager")
+//             .password(passwordEncoder.encode("manager123"))
+//             .roles("MANAGER")
+//             .build();
 
-    // InMemoryUserDetailsManager can take multiple users
-    return new InMemoryUserDetailsManager(user, admin, manager);
-}
-
+//     // InMemoryUserDetailsManager can take multiple users
+//     return new InMemoryUserDetailsManager(user, admin, manager);
+// }
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository){
+        return ueserName -> userRepository.findByUsername(ueserName)
+        .map(user -> new User(user.getUsername(), user.getPassword(), user.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_"+role.getName())).toList()
+        )).orElseThrow(()-> new UsernameNotFoundException("User not found" ));
+    }
 
     @Bean
     public PasswordEncoder bEncoder(){
