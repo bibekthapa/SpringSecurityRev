@@ -33,9 +33,6 @@ public class UserService {
 
     public UserEntity registerUser(UserDTO userDTO ){
 
-      
-
-
         if(userRepository.findByUsername(userDTO.getUsername()).isPresent()){
             throw new ApiException("Username Already Exists", HttpStatus.CONFLICT);
 
@@ -63,6 +60,13 @@ public class UserService {
         userRepository.save(userEntity);
         return userEntity;
 
+    }
+
+
+    public UserEntity getUser(String userName){
+      
+        UserEntity user = userRepository.findByUsername(userName).orElseThrow(()->new ApiException("User not in the system ", HttpStatus.NOT_FOUND));
+        return user;
     }
 
 

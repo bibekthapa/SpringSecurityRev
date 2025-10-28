@@ -2,7 +2,9 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -27,8 +29,10 @@ public class SecurityConfig {
                                         .requestMatchers("/users/**").hasRole("USER")
                                         .requestMatchers("/admin/**").hasRole("ADMIN")
                                         .requestMatchers("/public/**").hasAnyRole("ADMIN","USER")
+                                        .requestMatchers("/api/login/**").permitAll()
+                                        .anyRequest().authenticated()
                    
-                    ).formLogin(Customizer.withDefaults())
+                    )
                     .httpBasic(Customizer.withDefaults());
     
 
@@ -68,6 +72,11 @@ public class SecurityConfig {
 
         return new BCryptPasswordEncoder();
 
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception{
+        return config.getAuthenticationManager();
     }
     
 }
