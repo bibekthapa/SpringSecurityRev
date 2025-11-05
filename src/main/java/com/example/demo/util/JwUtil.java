@@ -18,6 +18,10 @@ public class JwUtil {
     private final String securekey = "securitysecurity1233343#@fgyY()@#$%";
     Key key = Keys.hmacShaKeyFor(securekey.getBytes());
 
+    private Key getSigningKey(){
+        return Keys.hmacShaKeyFor(securekey.getBytes());
+    }
+
     public String generateToken(UserEntity userDetails){
 
         return Jwts.builder().
@@ -26,6 +30,13 @@ public class JwUtil {
             expiration(new Date(System.currentTimeMillis() + 1000* 60 *60)).
             signWith(key).compact();
 
+    }
+
+    public String getUserName (String token){
+
+        return Jwts.parser().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody().getSubject();
+    
+    
     }
 
 

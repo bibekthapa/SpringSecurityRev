@@ -3,28 +3,52 @@ package com.example.demo.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.example.demo.filter.JwtAuthFilter;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.util.JwUtil;
 
 @Configuration
 public class SecurityConfig {
+
+    private final JwUtil util;
+    private final UserRepository userRepository;
+
+    public SecurityConfig(UserRepository userRepository , JwUtil util ){
+        this.userRepository = userRepository;
+        this.util = util;
+      
+    }
+
+     @Bean
+    public UserDetailsService userDetailsService(){
+        return userName -> userRepository.findByUsername(userName)
+        .map(user -> new User(user.getUsername(), user.getPassword(), user.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_"+role.getName())).toList()
+        )).orElseThrow(()-> new UsernameNotFoundException("User not found" ));
+    }
+
+    @Bean
+    public JwtAuthFilter jwtAuthFilter(){
+       return new JwtAuthFilter(util,userDetailsService());
+    }
+
 
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception{
         
         http.csrf(csrf -> csrf.disable())
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth.requestMatchers("/user/**").authenticated()
                                         .requestMatchers("/users/**").hasRole("USER")
                                         .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -33,7 +57,8 @@ public class SecurityConfig {
                                         .anyRequest().authenticated()
                    
                     )
-                    .httpBasic(Customizer.withDefaults());
+                    .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)
+                    .httpBasic(basic -> basic.disable());
     
 
         return http.build();
@@ -60,12 +85,7 @@ public class SecurityConfig {
 //     // InMemoryUserDetailsManager can take multiple users
 //     return new InMemoryUserDetailsManager(user, admin, manager);
 // }
-    @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository){
-        return ueserName -> userRepository.findByUsername(ueserName)
-        .map(user -> new User(user.getUsername(), user.getPassword(), user.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_"+role.getName())).toList()
-        )).orElseThrow(()-> new UsernameNotFoundException("User not found" ));
-    }
+   
 
     @Bean
     public PasswordEncoder bEncoder(){

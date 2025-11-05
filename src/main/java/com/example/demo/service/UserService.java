@@ -5,6 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -69,7 +72,19 @@ public class UserService {
         return user;
     }
 
+    public UserDetails loadUser(String userName){
 
+        UserEntity user = userRepository.findByUsername(userName).orElseThrow(()-> new ApiException("User not found in the system", HttpStatus.NOT_FOUND));
+
+        return User.builder().username(user.getUsername()).password(user.getPassword())
+        .authorities
+        (user.getRoles().
+        stream().
+        map(role -> new SimpleGrantedAuthority(role.getName()))
+        .collect(Collectors.toList()))
+        .build();
+
+    }
     
     
 }
