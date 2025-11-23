@@ -11,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.dto.RoleDTO;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.entity.RoleEntity;
 import com.example.demo.entity.UserEntity;
